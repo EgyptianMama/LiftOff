@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LiftOff — Implementation Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0f;--surface:#12121a;--surface2:#1a1a26;--border:rgba(255,255,255,0.06);
+  --border-hover:rgba(255,255,255,0.12);--text:#e8e8f0;--text-dim:#6b6b80;--text-muted:#44445a;
+  --accent:#6366f1;--accent-glow:rgba(99,102,241,0.15);--green:#22c55e;--green-bg:rgba(34,197,94,0.08);
+  --green-border:rgba(34,197,94,0.25);--amber:#f59e0b;--amber-bg:rgba(245,158,11,0.08);
+  --amber-border:rgba(245,158,11,0.25);--blue:#3b82f6;--blue-bg:rgba(59,130,246,0.08);
+  --blue-border:rgba(59,130,246,0.25);--red:#ef4444;--cyan:#06b6d4;
+  --radius:10px;--radius-sm:6px;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;font-size:14px;padding:0;min-height:100vh;overflow-x:hidden}
+
+/* Header */
+.header-bar{position:sticky;top:0;z-index:100;background:rgba(10,10,15,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:16px 24px}
+.header-inner{max-width:960px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),#818cf8);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff}
+.logo-text{font-size:18px;font-weight:700;letter-spacing:-0.02em}
+.logo-text span{color:var(--text-dim);font-weight:400;font-size:13px;margin-left:6px}
+
+/* Progress */
+.progress-wrap{display:flex;align-items:center;gap:12px}
+.progress-bar-bg{width:160px;height:6px;background:var(--surface2);border-radius:99px;overflow:hidden}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:99px;transition:width 0.5s cubic-bezier(0.4,0,0.2,1)}
+.progress-text{font-size:12px;color:var(--text-dim);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* Content */
+.content{max-width:960px;margin:0 auto;padding:20px 24px 64px}
+
+/* Environment badges */
+.env-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.env-label{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);font-weight:600}
+.env-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:99px;font-size:11px;font-weight:500}
+.env-badge::before{content:'';width:6px;height:6px;border-radius:50%}
+.env-wsl{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}.env-wsl::before{background:var(--green)}
+.env-win{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border)}.env-win::before{background:var(--blue)}
+.env-docker{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}.env-docker::before{background:var(--amber)}
+.env-ij{background:rgba(255,255,255,0.04);color:#aaa;border:1px solid rgba(255,255,255,0.1)}.env-ij::before{background:#888}
+.env-browser{background:rgba(6,182,212,0.08);color:var(--cyan);border:1px solid rgba(6,182,212,0.25)}.env-browser::before{background:var(--cyan)}
+.env-vps{background:rgba(168,85,247,0.08);color:#a855f7;border:1px solid rgba(168,85,247,0.25)}.env-vps::before{background:#a855f7}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;margin-bottom:20px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:8px 16px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;font-weight:500;color:var(--text-dim);cursor:pointer;background:transparent;transition:all 0.2s;white-space:nowrap;position:relative;font-family:inherit}
+.tab:hover{border-color:var(--border-hover);color:var(--text)}
+.tab.active{background:var(--surface2);border-color:var(--accent);color:var(--text);box-shadow:0 0 12px var(--accent-glow)}
+.tab .tab-count{font-size:10px;margin-left:4px;opacity:0.5}
+.tab .tab-check{color:var(--green);margin-left:4px;font-size:11px}
+
+/* Task list */
+.task-list{display:flex;flex-direction:column;gap:6px}
+.task-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:flex-start;gap:12px;cursor:pointer;transition:all 0.2s;user-select:none}
+.task-card:hover{border-color:var(--border-hover);background:var(--surface2);transform:translateX(2px)}
+.task-card.done{opacity:0.4}
+.task-card.done:hover{opacity:0.6}
+
+.num{width:28px;height:28px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--text-dim);flex-shrink:0;transition:all 0.25s}
+.task-card.done .num{background:rgba(34,197,94,0.15);border-color:var(--green-border);color:var(--green)}
+.task-body{flex:1;min-width:0}
+.task-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:6px;line-height:1.45}
+.task-card.done .task-title{text-decoration:line-through;color:var(--text-muted)}
+.task-details{font-size:11px;color:var(--text-muted);line-height:1.4;margin-bottom:6px;display:none}
+.task-card:hover .task-details{display:block}
+.tags{display:flex;flex-wrap:wrap;gap:4px}
+.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:500;white-space:nowrap}
+.t-wsl{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.t-win{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border)}
+.t-docker{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+.t-ij{background:rgba(255,255,255,0.03);color:#999;border:1px solid rgba(255,255,255,0.08)}
+.t-browser{background:rgba(6,182,212,0.06);color:var(--cyan);border:1px solid rgba(6,182,212,0.2)}
+.t-vps{background:rgba(168,85,247,0.06);color:#a855f7;border:1px solid rgba(168,85,247,0.2)}
+.t-skill{background:rgba(255,255,255,0.02);color:var(--text-muted);border:1px solid rgba(255,255,255,0.05)}
+
+/* Gate */
+.gate{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;margin-top:12px;position:relative;overflow:hidden}
+.gate::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),transparent)}
+.gate.passed{border-color:var(--green-border);background:rgba(34,197,94,0.04)}
+.gate.passed::before{background:linear-gradient(90deg,var(--green),transparent)}
+.gate-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.gate-icon{font-size:14px}
+.gate-label{font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted)}
+.gate.passed .gate-label{color:var(--green)}
+.gate-text{font-size:12px;color:var(--text-dim);line-height:1.5;font-family:'JetBrains Mono',monospace}
+.gate.passed .gate-text{color:rgba(34,197,94,0.8)}
+
+/* Phase complete */
+.phase-done-msg{text-align:center;padding:16px;font-size:12px;color:var(--green);opacity:0.7;letter-spacing:0.03em}
+
+/* Animations */
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.task-card{animation:fadeIn 0.15s ease-out both}
+.task-card:nth-child(2){animation-delay:0.02s}
+.task-card:nth-child(3){animation-delay:0.04s}
+.task-card:nth-child(4){animation-delay:0.06s}
+.task-card:nth-child(5){animation-delay:0.08s}
+
+/* Mobile */
+@media(max-width:640px){
+  .header-inner{flex-direction:column;align-items:flex-start}
+  .content{padding:16px 16px 48px}
+  .tabs{gap:3px}
+  .tab{padding:6px 12px;font-size:11px}
+}
+</style>
+</head>
+<body>
+
+<div class="header-bar">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">L</div>
+      <div class="logo-text">LiftOff <span>Implementation Tracker</span></div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="bar" style="width:0%"></div></div>
+      <span class="progress-text" id="prog">0 / 55</span>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="env-row">
+    <span class="env-label">Environments</span>
+    <span class="env-badge env-wsl">WSL2</span>
+    <span class="env-badge env-win">Windows</span>
+    <span class="env-badge env-docker">Docker</span>
+    <span class="env-badge env-ij">IntelliJ</span>
+    <span class="env-badge env-browser">Browser</span>
+    <span class="env-badge env-vps">VPS</span>
+  </div>
+  <div class="tabs" id="tabs"></div>
+  <div class="task-list" id="tasks"></div>
+</div>
+
+<script>
+const PHASES = [
+  {
+    id:'p0', label:'Phase 0 · Setup', gate:'java --version → 21, docker info → OK, psql connects, IntelliJ opens Spring Boot project',
+    tasks:[
+      {id:'s1', title:'Enable WSL2 + install Ubuntu 22.04', env:'win', skills:['wsl'], detail:'wsl --install -d Ubuntu-22.04'},
+      {id:'s2', title:'Enable WSL2 backend in Docker Desktop', env:'docker', skills:['docker'], detail:'Settings → Resources → WSL Integration → Enable Ubuntu'},
+      {id:'s3', title:'Install Java 21 (Temurin) in WSL2', env:'wsl', skills:['java'], detail:'sudo apt install temurin-21-jdk via Adoptium repo'},
+      {id:'s4', title:'Install PostgreSQL 16 + create liftoff DB', env:'wsl', skills:['pg'], detail:'sudo apt install postgresql-16, createdb liftoff'},
+      {id:'s5', title:'Auto-start PostgreSQL on WSL2 launch', env:'wsl', skills:['wsl'], detail:'Add to ~/.bashrc or enable systemd'},
+      {id:'s6', title:'Install IntelliJ IDEA on Windows', env:'win', skills:['intellij'], detail:'Community Edition, configure WSL JDK'},
+      {id:'s7', title:'Create Docker network + builder image', env:'wsl', skills:['docker'], detail:'docker network create --internal liftoff-build-net + build Dockerfile'},
+      {id:'s8', title:'Install Caddy (custom build w/ Cloudflare DNS)', env:'wsl', skills:['caddy'], detail:'xcaddy build --with github.com/caddy-dns/cloudflare'},
+    ]
+  },
+  {
+    id:'p1', label:'Phase 1 · Core Pipeline', gate:'Push to GitHub → build runs → site loads on localhost → build logs stream live via SSE',
+    tasks:[
+      {id:'p1t1',  title:'Generate Spring Boot 3.3 project', env:'win', skills:['java'], detail:'Spring Initializr: Web, Security, JPA, Validation, Actuator, Flyway, PostgreSQL'},
+      {id:'p1t2',  title:'Configure application.yml + profiles', env:'ij', skills:['java','pg'], detail:'Datasource, HikariCP (10 max), Flyway, JWT secret, async config'},
+      {id:'p1t3',  title:'Write Flyway migrations V1–V5', env:'ij', skills:['pg'], detail:'users, projects, builds, deployments, refresh_tokens tables'},
+      {id:'p1t4',  title:'Implement User entity + AuthService', env:'ij', skills:['java'], detail:'BCrypt hashing, registration, login flow'},
+      {id:'p1t5',  title:'Implement JwtService', env:'ij', skills:['java','security'], detail:'Access token (15min HS256), refresh (7d), token_family rotation'},
+      {id:'p1t6',  title:'Implement JwtAuthenticationFilter', env:'ij', skills:['java','security'], detail:'Extract Bearer token, validate, set SecurityContext'},
+      {id:'p1t7',  title:'Configure SecurityFilterChain', env:'ij', skills:['java','security'], detail:'Stateless, CSRF off, permit auth + webhook endpoints'},
+      {id:'p1t8',  title:'Implement ProjectService + CRUD', env:'ij', skills:['java'], detail:'Create project → generate webhook secret, derive slug'},
+      {id:'p1t9',  title:'Implement WebhookController', env:'ij', skills:['java'], detail:'HMAC-SHA256 validation, X-GitHub-Delivery idempotency, branch check'},
+      {id:'p1t10', title:'Implement FrameworkDetector', env:'ij', skills:['java'], detail:'Parse package.json for React/Vue/Vite/Next/Astro/Hugo/static'},
+      {id:'p1t11', title:'Implement DockerBuildRunner', env:'ij', skills:['java','docker'], detail:'docker-java: create container, bind mounts, resource limits, stream logs'},
+      {id:'p1t12', title:'Implement BuildOrchestrator (async)', env:'ij', skills:['java'], detail:'@Async, Semaphore(2), clone → detect → build → deploy pipeline'},
+      {id:'p1t13', title:'Implement BuildLogService + SSE endpoint', env:'ij', skills:['java','sse'], detail:'SseEmitter, ConcurrentHashMap subscribers, 15s heartbeat'},
+      {id:'p1t14', title:'Implement DeploymentService', env:'ij', skills:['java'], detail:'Copy artifacts, create symlink current → deploy-{id}'},
+      {id:'p1t15', title:'Add static file serving (dev mode)', env:'ij', skills:['java'], detail:'Serve /srv/deployments/{slug}/current/ for local testing'},
+      {id:'p1t16', title:'End-to-end test: manual push', env:'wsl', skills:['all'], detail:'Push test repo → verify webhook → build → deploy → site loads'},
+    ]
+  },
+  {
+    id:'p2', label:'Phase 2 · Subdomain + HTTPS', gate:'{slug}.liftoff.dev is live with valid HTTPS cert in browser',
+    tasks:[
+      {id:'p2t1', title:'Provision Oracle Cloud Free Tier ARM instance', env:'browser', skills:['infra'], detail:'4 OCPU, 24 GB RAM, Ubuntu 22.04, open ports 80/443/22'},
+      {id:'p2t2', title:'Configure Cloudflare DNS (wildcard)', env:'browser', skills:['dns'], detail:'A + *.A records, DNS only (grey cloud), Full Strict SSL'},
+      {id:'p2t3', title:'Deploy Caddy on server + systemd', env:'vps', skills:['caddy'], detail:'Install custom build, configure systemd, admin API localhost:2019'},
+      {id:'p2t4', title:'Configure Caddy wildcard TLS', env:'vps', skills:['caddy','tls'], detail:'Cloudflare DNS-01 challenge, CF_API_TOKEN env var'},
+      {id:'p2t5', title:'Implement CaddyRoutingService', env:'ij', skills:['java'], detail:'addRoute() + removeRoute() via Caddy admin API JSON'},
+      {id:'p2t6', title:'Integrate Caddy routes on deploy/delete', env:'ij', skills:['java'], detail:'Add route on deploy, remove on project delete'},
+      {id:'p2t7', title:'Verify Caddy admin unreachable from containers', env:'vps', skills:['docker','caddy'], detail:'docker run --network=liftoff-build-net curl localhost:2019 → fail'},
+      {id:'p2t8', title:'Deploy Spring Boot JAR on server', env:'vps', skills:['java'], detail:'java -jar liftoff.jar --spring.profiles.active=prod via systemd'},
+      {id:'p2t9', title:'End-to-end test: real subdomain with HTTPS', env:'browser', skills:['all'], detail:'Push test repo → mysite.liftoff.dev loads with valid cert'},
+    ]
+  },
+  {
+    id:'p3', label:'Phase 3 · Isolation', gate:'Runaway build killed at 300s, prior site still serves, docker ps shows no containers',
+    tasks:[
+      {id:'p3t1', title:'Lock build containers to internal network', env:'ij', skills:['java','docker'], detail:'--network=liftoff-build-net (internal: true)'},
+      {id:'p3t2', title:'Enforce all resource limits', env:'ij', skills:['java','docker'], detail:'--cpus=1, --memory=1g, --pids-limit=256'},
+      {id:'p3t3', title:'Implement build timeout (300s)', env:'ij', skills:['java'], detail:'ScheduledExecutorService → docker kill after timeout'},
+      {id:'p3t4', title:'Implement deployment rollback', env:'ij', skills:['java'], detail:'POST /api/deployments/{id}/rollback → symlink swap'},
+      {id:'p3t5', title:'Add cleanup scheduler', env:'ij', skills:['java','docker'], detail:'@Scheduled: kill orphan containers, prune images weekly, delete old deploys'},
+      {id:'p3t6', title:'Prevent Docker socket mount in containers', env:'ij', skills:['java','security'], detail:'Audit CreateContainerCmd — no /var/run/docker.sock bind'},
+      {id:'p3t7', title:'Run isolation gate test', env:'vps', skills:['docker'], detail:'Deploy site → start infinite-loop build → verify site up, build killed, no leak'},
+    ]
+  },
+  {
+    id:'p4', label:'Phase 4 · Multi-Tenant', gate:'User A gets 403 on ALL User B resources — zero exceptions',
+    tasks:[
+      {id:'p4t1', title:'Audit every repository method for owner scope', env:'ij', skills:['java'], detail:'Every findBy query must include AND owner_id = :userId'},
+      {id:'p4t2', title:'Create reusable ownership verification', env:'ij', skills:['java','security'], detail:'@OwnershipCheck aspect or service method pattern'},
+      {id:'p4t3', title:'Prefix all artifact paths with user ID', env:'ij', skills:['java'], detail:'/srv/deployments/{userId}/{slug}/ — prevent path traversal'},
+      {id:'p4t4', title:'Validate slug uniqueness is global', env:'ij', skills:['java','pg'], detail:'Two users cannot have the same subdomain'},
+      {id:'p4t5', title:'Scope SSE log stream to owner', env:'ij', skills:['java','sse'], detail:'Verify build ownership before subscribing to log stream'},
+      {id:'p4t6', title:'Write cross-tenant integration tests', env:'ij', skills:['java','testing'], detail:'2 users, attempt cross-access on every endpoint, assert 403'},
+    ]
+  },
+  {
+    id:'p5', label:'Phase 5 · Production', gate:'App survives 24h soak test, monitoring stable, auto-restart on crash',
+    tasks:[
+      {id:'p5t1', title:'Add structured JSON logging', env:'ij', skills:['java'], detail:'Logback JSON encoder, MDC with userId, projectSlug, buildId'},
+      {id:'p5t2', title:'Configure Spring Actuator health + metrics', env:'ij', skills:['java'], detail:'/actuator/health, /actuator/prometheus'},
+      {id:'p5t3', title:'Add rate limiting on auth endpoints', env:'ij', skills:['java','security'], detail:'Bucket4j or custom filter: 5 login/min/IP'},
+      {id:'p5t4', title:'Add request/response logging filter', env:'ij', skills:['java'], detail:'Log method, path, status, duration for all API requests'},
+      {id:'p5t5', title:'Set up systemd for Spring Boot + Caddy', env:'vps', skills:['linux'], detail:'Auto-restart on crash, proper user permissions'},
+      {id:'p5t6', title:'Set up PostgreSQL daily backups', env:'vps', skills:['pg','linux'], detail:'pg_dump cron daily, keep last 7 days'},
+      {id:'p5t7', title:'Configure disk usage monitoring', env:'vps', skills:['linux'], detail:'Alert when /srv/deployments exceeds 80% disk'},
+      {id:'p5t8', title:'Write setup-server.sh bootstrap script', env:'ij', skills:['linux'], detail:'One-shot: install Java, PG, Docker, Caddy, create dirs, firewall'},
+      {id:'p5t9', title:'24-hour soak test', env:'vps', skills:['all'], detail:'Automated: push test repos periodically, check sites are live'},
+    ]
+  }
+];
+
+const ENV_MAP = {
+  win:     ['t-win','Windows'],
+  wsl:     ['t-wsl','WSL2'],
+  docker:  ['t-docker','Docker'],
+  ij:      ['t-ij','IntelliJ'],
+  browser: ['t-browser','Browser'],
+  vps:     ['t-vps','VPS'],
+};
+
+let done = {};
+let activePhase = 'p0';
+
+function total(){ return PHASES.reduce((s,p)=>s+p.tasks.length,0); }
+function totalDone(){ return Object.values(done).filter(Boolean).length; }
+function phaseAllDone(p){ return p.tasks.every(t=>done[t.id]); }
+function phaseDoneCount(p){ return p.tasks.filter(t=>done[t.id]).length; }
+
+function updateProgress(){
+  const d=totalDone(), t=total(), pct=t?Math.round(d/t*100):0;
+  document.getElementById('prog').textContent=`${d} / ${t}`;
+  document.getElementById('bar').style.width=pct+'%';
+}
+
+function envTag(env){
+  const [cls,label]=ENV_MAP[env]||['t-skill',env];
+  return `<span class="tag ${cls}">${label}</span>`;
+}
+function skillTag(s){ return `<span class="tag t-skill">${s}</span>`; }
+
+function renderTabs(){
+  document.getElementById('tabs').innerHTML=PHASES.map(p=>{
+    const done_count=phaseDoneCount(p), all=p.tasks.length, allDone=phaseAllDone(p);
+    return `<button class="tab${p.id===activePhase?' active':''}" onclick="switchPhase('${p.id}')">
+      ${p.label}
+      <span class="tab-count">${done_count}/${all}</span>
+      ${allDone?'<span class="tab-check">✓</span>':''}
+    </button>`;
+  }).join('');
+}
+
+function renderTasks(){
+  const phase=PHASES.find(p=>p.id===activePhase);
+  let html=phase.tasks.map((t,i)=>`
+    <div class="task-card${done[t.id]?' done':''}" onclick="toggle('${t.id}')">
+      <div class="num">${done[t.id]?'✓':(i+1)}</div>
+      <div class="task-body">
+        <div class="task-title">${t.title}</div>
+        ${t.detail?`<div class="task-details">${t.detail}</div>`:''}
+        <div class="tags">
+          ${envTag(t.env)}
+          ${t.skills.map(skillTag).join('')}
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  if(phase.gate){
+    const passed=phaseAllDone(phase);
+    html+=`
+      <div class="gate${passed?' passed':''}">
+        <div class="gate-header">
+          <span class="gate-icon">${passed?'🟢':'🔒'}</span>
+          <span class="gate-label">Phase Gate — ${passed?'Passed':'Not Yet'}</span>
+        </div>
+        <div class="gate-text">${phase.gate}</div>
+      </div>`;
+  }
+
+  if(phaseAllDone(phase)){
+    html+=`<div class="phase-done-msg">✨ Phase complete — proceed to next phase</div>`;
+  }
+
+  document.getElementById('tasks').innerHTML=html;
+}
+
+function switchPhase(id){ activePhase=id; renderTabs(); renderTasks(); }
+
+function toggle(id){
+  done[id]=!done[id];
+  save(); updateProgress(); renderTabs(); renderTasks();
+}
+
+function save(){
+  try{ localStorage.setItem('liftoff-done', JSON.stringify(done)); }catch(e){}
+  try{ window.storage && window.storage.set('liftoff-done', JSON.stringify(done)); }catch(e){}
+}
+
+function load(){
+  try{
+    const stored = localStorage.getItem('liftoff-done');
+    if(stored) done = JSON.parse(stored);
+  }catch(e){}
+  try{
+    if(window.storage){
+      window.storage.get('liftoff-done').then(r=>{
+        if(r && r.value){ done=JSON.parse(r.value); updateProgress(); renderTabs(); renderTasks(); }
+      });
+    }
+  }catch(e){}
+  updateProgress(); renderTabs(); renderTasks();
+}
+
+load();
+</script>
+</body>
+</html>

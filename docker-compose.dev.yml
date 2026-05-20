@@ -1,0 +1,24 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: liftoff-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: liftoff
+      POSTGRES_USER: liftoff
+      POSTGRES_PASSWORD: liftoff
+    ports:
+      - "5433:5432"
+    volumes:
+      - liftoff_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U liftoff -d liftoff"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  liftoff_pg_data:
+    driver: local
