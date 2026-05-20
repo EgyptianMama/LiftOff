@@ -55,9 +55,13 @@ management:
 # ============================
 liftoff:
   jwt:
-    secret: ${JWT_SECRET:dev-only-secret-key-that-is-at-least-256-bits-long-for-hmac-sha256-signing}
+    secret: ${JWT_SECRET:8a3d9241b72e50523e1f0e8f3b2512a8b9f71c35b8e964b18c50c0efbdc9d74a3f5a2e9b1d9c153b6f2f3d61b6e651e7a5c7f8287413d7119ab3f6a29e2f6c8d}
     access-token-expiry: 15m
     refresh-token-expiry: 7d
+  caddy:
+    admin-url: http://localhost:2019
+  deployments:
+    base-dir: ./data/deployments
 
   build:
     max-concurrent: 2
@@ -71,7 +75,3 @@ liftoff:
   deployment:
     base-path: ${DEPLOYMENT_BASE_PATH:/srv/deployments}
     max-kept: 3
-
-  caddy:
-    admin-url: http://localhost:2019
-    domain: localhost

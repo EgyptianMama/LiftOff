@@ -19,6 +19,20 @@ services:
       timeout: 5s
       retries: 5
 
+  caddy:
+    image: caddy:2.8.4-alpine
+    container_name: liftoff_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "2019:2019"
+    volumes:
+      - ./data/deployments:/srv/deployments
+      - caddy_data:/data
+      - caddy_config:/config
+    command: caddy run --resume
+
 volumes:
   liftoff_pg_data:
     driver: local
