@@ -22,6 +22,10 @@ target/
 
 ### VS Code ###
 .vscode/
+.history/
+
+### LiftOff ###
+data/
 
 ### NetBeans ###
 /nbproject/private/

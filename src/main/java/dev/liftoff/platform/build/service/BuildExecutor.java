@@ -35,6 +35,7 @@ public class BuildExecutor {
     private String deploymentsBaseDir;
 
     @Async("buildThreadPool")
+    @org.springframework.transaction.annotation.Transactional
     public void executeBuild(UUID buildId) {
         log.info("Starting execution for build {}", buildId);
         Build build = buildRepository.findById(buildId).orElse(null);
@@ -86,8 +87,8 @@ public class BuildExecutor {
             }
             
             // Move files to permanent deployments directory
-            UUID deploymentId = UUID.randomUUID();
-            File deployDir = new File(deploymentsBaseDir, deploymentId.toString());
+            String deployDirName = UUID.randomUUID().toString();
+            File deployDir = new File(deploymentsBaseDir, deployDirName);
             deployDir.mkdirs();
             
             logStreamingService.broadcastLog(buildId, "Moving artifacts to deployment directory...");
@@ -95,11 +96,10 @@ public class BuildExecutor {
             
             // Create Deployment record
             Deployment deployment = new Deployment();
-            deployment.setId(deploymentId);
             deployment.setBuild(build);
             deployment.setProject(build.getProject());
             // Path inside Caddy container
-            deployment.setArtifactPath("/srv/deployments/" + deploymentId.toString());
+            deployment.setArtifactPath("/srv/deployments/" + deployDirName);
             deployment.setLive(true);
             deployment.setUrl("http://" + build.getProject().getSubdomain() + ".localhost");
             
