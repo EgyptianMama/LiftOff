@@ -20,8 +20,8 @@ import java.util.concurrent.Executor;
 @EnableScheduling
 public class AsyncConfig {
 
-    @Bean(name = "buildExecutor")
-    public Executor buildExecutor() {
+    @Bean(name = "buildThreadPool")
+    public Executor buildThreadPool() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(2);
         executor.setMaxPoolSize(2);
