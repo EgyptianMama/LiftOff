@@ -4,7 +4,8 @@
 
 LiftOff is a complete Vercel/Netlify clone built from scratch. It is designed to demonstrate an end-to-end automated deployment pipeline: from receiving a webhook, cloning code, building it inside isolated Docker containers, to serving the artifacts over a dynamically configured Caddy reverse proxy. 
 
-![LiftOff Architecture UI Overview](frontend/public/hero.png) *(Note: Add hero screenshot here if available)*
+![Login Screen(ui-preview/Screenshot 2026-05-21 160443.png)
+![Dashboard View](ui-preview/Screenshot 2026-05-21 160443.png)
 
 ---
 
