@@ -6,8 +6,8 @@ LiftOff is a complete Vercel/Netlify clone built from scratch. It is designed to
 
 | | |
 |:---:|:---:|
-| ![LiftOff Login UI](ui-preview/Login.png) <br> *(Note: Add hero screenshot here if available)* | ![LiftOff Dashboard UI](ui-preview/Dashboard.png) <br> *(Note: Add hero screenshot here if available)* |
-| ![LiftOff Project Deployment](ui-preview/Project-Deployment.png) <br> *(Note: Add hero screenshot here if available)* | ![LiftOff Deployed Project](ui-preview/Deployed-Project.png) <br> *(Note: Add hero screenshot here if available)* |
+| ![LiftOff Login UI](ui-preview/Login.png) <br>  | ![LiftOff Dashboard UI](ui-preview/Dashboard.png) <br> 
+| ![LiftOff Project Deployment](ui-preview/Project-Deployment.png) <br>  | ![LiftOff Deployed Project](ui-preview/Deployed-Project.png) <br> 
 
 ---
 
