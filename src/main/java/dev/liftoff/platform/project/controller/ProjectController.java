@@ -1,5 +1,6 @@
 package dev.liftoff.platform.project.controller;
 
+import dev.liftoff.platform.build.dto.BuildResponse;
 import dev.liftoff.platform.project.dto.ProjectCreateRequest;
 import dev.liftoff.platform.project.dto.ProjectResponse;
 import dev.liftoff.platform.project.service.ProjectService;
@@ -48,5 +49,24 @@ public class ProjectController {
         
         UUID ownerId = UUID.fromString(principal.getUsername());
         return ResponseEntity.ok(projectService.getProject(id, ownerId));
+    }
+
+    @PostMapping("/{id}/deploy")
+    public ResponseEntity<Void> triggerDeploy(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal org.springframework.security.core.userdetails.User principal) {
+        
+        UUID ownerId = UUID.fromString(principal.getUsername());
+        projectService.triggerManualBuild(id, ownerId);
+        return ResponseEntity.accepted().build();
+    }
+
+    @GetMapping("/{id}/builds")
+    public ResponseEntity<List<BuildResponse>> getProjectBuilds(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal org.springframework.security.core.userdetails.User principal) {
+        
+        UUID ownerId = UUID.fromString(principal.getUsername());
+        return ResponseEntity.ok(projectService.getProjectBuilds(id, ownerId));
     }
 }

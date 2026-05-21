@@ -11,6 +11,7 @@ spring:
 
 logging:
   level:
+
     dev.liftoff: DEBUG
     org.hibernate.SQL: DEBUG
     org.flywaydb: DEBUG

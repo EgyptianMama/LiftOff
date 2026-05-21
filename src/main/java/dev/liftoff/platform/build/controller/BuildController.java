@@ -24,6 +24,7 @@ public class BuildController {
     private final BuildRepository buildRepository;
     private final LogStreamingService logStreamingService;
 
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     @GetMapping(value = "/{buildId}/logs/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public ResponseEntity<SseEmitter> streamLogs(
             @PathVariable UUID buildId,
@@ -37,7 +38,8 @@ public class BuildController {
         }
         
         // Ensure the logged in user owns the project this build belongs to
-        if (!build.getProject().getOwner().getId().equals(ownerId)) {
+        UUID projectOwnerId = build.getProject().getOwner().getId();
+        if (!projectOwnerId.equals(ownerId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         

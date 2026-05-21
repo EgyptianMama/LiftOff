@@ -2,10 +2,13 @@ package dev.liftoff.platform.project.service;
 
 import dev.liftoff.platform.auth.entity.User;
 import dev.liftoff.platform.auth.repository.UserRepository;
+import dev.liftoff.platform.build.dto.BuildResponse;
 import dev.liftoff.platform.common.exception.LiftoffException;
 import dev.liftoff.platform.project.dto.ProjectCreateRequest;
 import dev.liftoff.platform.project.dto.ProjectResponse;
+import dev.liftoff.platform.project.entity.Build;
 import dev.liftoff.platform.project.entity.Project;
+import dev.liftoff.platform.project.repository.BuildRepository;
 import dev.liftoff.platform.project.repository.ProjectRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,6 +26,7 @@ public class ProjectService {
 
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
+    private final BuildRepository buildRepository;
 
     @Transactional
     public ProjectResponse createProject(ProjectCreateRequest request, UUID ownerId) {
@@ -49,6 +53,13 @@ public class ProjectService {
         project.setGithubWebhookSecret(generateWebhookSecret());
 
         project = projectRepository.save(project);
+
+        Build build = new Build();
+        build.setProject(project);
+        build.setBranch(project.getBranch());
+        build.setStatus("QUEUED");
+        buildRepository.save(build);
+
         return ProjectResponse.fromEntity(project);
     }
 
@@ -62,6 +73,26 @@ public class ProjectService {
         Project project = projectRepository.findByIdAndOwnerId(projectId, ownerId)
                 .orElseThrow(() -> new LiftoffException("Project not found"));
         return ProjectResponse.fromEntity(project);
+    }
+
+    @Transactional
+    public void triggerManualBuild(UUID projectId, UUID ownerId) {
+        Project project = projectRepository.findByIdAndOwnerId(projectId, ownerId)
+                .orElseThrow(() -> new LiftoffException("Project not found"));
+
+        Build build = new Build();
+        build.setProject(project);
+        build.setBranch(project.getBranch());
+        build.setStatus("QUEUED");
+        buildRepository.save(build);
+    }
+
+    public List<BuildResponse> getProjectBuilds(UUID projectId, UUID ownerId) {
+        Project project = projectRepository.findByIdAndOwnerId(projectId, ownerId)
+                .orElseThrow(() -> new LiftoffException("Project not found"));
+        return buildRepository.findByProjectIdOrderByCreatedAtDesc(projectId).stream()
+                .map(BuildResponse::fromEntity)
+                .collect(Collectors.toList());
     }
 
     private String generateWebhookSecret() {
